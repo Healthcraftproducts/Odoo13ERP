@@ -1,5 +1,7 @@
-from odoo import models, fields, api
-
+from odoo import api, fields, models, tools, SUPERUSER_ID
+from odoo.tools.translate import _
+from odoo.tools import email_re, email_split
+from datetime import datetime, timedelta, date
 
 class DisplaysHealthcraft(models.Model):
 	_name = 'displays.healthcraft'
@@ -163,29 +165,78 @@ class ResPartner(models.Model):
 		selection=[('person', 'Individual'), ('company', 'Company')],
 		compute='_compute_company_type', inverse='_write_company_type',
 		default='company')	
-	hcp_is_customer = fields.Boolean(string="Is Customer?")
+	hcp_is_customer = fields.Boolean(string="Is Customer?",default=True)
 	hcp_customer_currency = fields.Many2one("res.currency",string="Customer Currency")
-	hcp_is_vendor = fields.Boolean(string="Is Vendor?")
+	hcp_is_vendor = fields.Boolean(string="Is Vendor?")	
+	hcp_contact_creation_date = fields.Date('Creation Date(From Lead)')
 
 	@api.model
-	def create(self, vals_list):
-		res = super(ResPartner, self).create(vals_list)
-		if not res.parent_id and res.customer_rank == 1:
+	def create(self, vals):
+
+		if vals['hcp_is_customer'] == True and vals['company_type'] == 'company':
 			customer_no = self.env['ir.sequence'].next_by_code('partner.sequence')
-			res.write({'hcp_customer_id': customer_no})
+			vals['hcp_customer_id'] = customer_no
+		if 'hcp_is_vendor' in vals:           
+			if vals['hcp_is_vendor'] == True and vals['company_type'] == 'company':
+				vendor_no = self.env['ir.sequence'].next_by_code('vendor.sequence')
+				vals['hcp_vendor_no'] = vendor_no
+		if vals['company_type'] == 'person':
+			parent_id = vals.get('parent_id')
+			if parent_id:
+				main_company = self.env['res.partner'].search([('id', '=', parent_id)])
+				vals.update({'hcp_customer_id': main_company.hcp_customer_id,'hcp_vendor_no': main_company.hcp_vendor_no,'hcp_is_customer':main_company.hcp_is_customer,'hcp_is_vendor':main_company.hcp_is_vendor,'property_delivery_carrier_id':main_company.property_delivery_carrier_id.id,'hcp_ship_via_description':main_company.hcp_ship_via_description})
+		res = super(ResPartner, self).create(vals)
 		return res
 
+	# @api.onchange('company_id', 'parent_id')
+	# def _onchange_company_id(self):
+	# 	super(ResPartner, self)._onchange_company_id()
+	# 	if self.parent_id:
+	# 		self.hcp_customer_id = self.parent_id.hcp_customer_id
 
-	@api.onchange('company_id', 'parent_id')
-	def _onchange_company_id(self):
-		super(ResPartner, self)._onchange_company_id()
-		if self.parent_id:
-			self.hcp_customer_id = self.parent_id.hcp_customer_id
 
+	# @api.onchange('property_delivery_carrier_id')
+	# def onchange_property_delivery_carrier_id(self):
+	# 	if self.property_delivery_carrier_id:
+	# 		desc = self.property_delivery_carrier_id.website_description
+	# 		self.hcp_ship_via_description = desc
 
-	@api.onchange('property_delivery_carrier_id')
-	def onchange_property_delivery_carrier_id(self):
-		if self.property_delivery_carrier_id:
-			desc = self.property_delivery_carrier_id.website_description
-			self.hcp_ship_via_description = desc
+class Lead(models.Model):
+	_inherit = "crm.lead"
 
+	def _create_lead_partner_data(self, name, is_company, parent_id=False):
+		""" extract data from lead to create a partner
+			:param name : furtur name of the partner
+			:param is_company : True if the partner is a company
+			:param parent_id : id of the parent partner (False if no parent)
+			:returns res.partner record
+		"""
+		email_split = tools.email_split(self.email_from)
+		res = {
+			'name': name,
+			'user_id': self.env.context.get('default_user_id') or self.user_id.id,
+			'comment': self.description,
+			'team_id': self.team_id.id,
+			'parent_id': parent_id,
+			'phone': self.phone,
+			'mobile': self.mobile,
+			'hcp_is_customer':True,
+			'hcp_is_vendor':False,
+			'company_type':'company',
+			'email': email_split[0] if email_split else False,
+			'title': self.title.id,
+			'function': self.function,
+			'street': self.street,
+			'street2': self.street2,
+			'zip': self.zip,
+			'city': self.city,
+			'country_id': self.country_id.id,
+			'state_id': self.state_id.id,
+			'website': self.website,
+			'is_company': is_company,
+			'type': 'contact',
+			'hcp_contact_creation_date': datetime.now().strftime('%Y-%m-%d')
+		}
+		if self.lang_id:
+			res['lang'] = self.lang_id.code
+		return res

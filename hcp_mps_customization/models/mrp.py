@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-a
+# -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 from collections import namedtuple, OrderedDict, defaultdict
 from datetime import datetime, timedelta
@@ -70,5 +70,11 @@ class StockMove(models.Model):
             'mo_reference': False
         })
         return values
-    
-  
+
+class ProductReplenish(models.TransientModel):
+    _inherit = 'product.replenish'
+
+    def _prepare_run_values(self):
+        values = super(ProductReplenish, self)._prepare_run_values()
+        values.update({'mo_reference': False})
+        return values

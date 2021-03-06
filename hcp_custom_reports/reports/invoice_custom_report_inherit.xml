@@ -43,8 +43,8 @@
                                 <br><span style="font-size:9pt;" t-field="o.partner_id.hcp_customer_id"/></br>
                             </t>
                             
-                            <t t-if ="o.partner_id.vat!=False">
-                              <br><span style="font-size:9pt;" t-field="o.partner_id.vat"/></br> 
+                            <t t-if ="o.partner_id.federal_tax_id!=False">
+                              <br><span style="font-size:9pt;" t-field="o.partner_id.federal_tax_id"/></br> 
                             </t>
                         </td>
                         <td style="width: 50%; text-align: left;">
@@ -254,7 +254,7 @@
                     <tr>
                     <td style="width: 50%;" border="None">&amp;nbsp;</td>
                     <td style="width: 30%; text-align: left; padding-top: 0%;padding-bottom: 0%;border: 1px solid black; border-left:none; border-bottom:none; border-right:none;">
-                        <span><strong>Tax Rate(<span t-esc="round(o.fiscal_position_id.tax_rate)"/>%)</strong></span>
+                        <span><strong>Tax Rate(<span t-esc="o.fiscal_position_id.tax_rate"/>)</strong></span>
                     </td>
                     <td style="width: 20%; text-align: right; padding-top: 0%;padding-bottom: 0%; border: 1px solid black; border-left:none; border-bottom:none; border-right:none;">
                         <span style="text-align: right;"><span t-field="o.amount_tax"/></span>
@@ -298,10 +298,11 @@
             <br><strong><u>REMITTANCE ADDRESS:</u></strong></br>
             
                 <br><span t-esc="o.partner_shipping_id.country_id.remittance_address"/></br>
+                <br><strong>GST/HST #:</strong><span t-esc="o.partner_shipping_id.country_id.vat_label"/></br>
                 
         </t>
 
-        <br><strong>GST/HST #:</strong><span t-esc="o.partner_shipping_id.vat"/></br>
+        
 
         
 

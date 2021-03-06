@@ -9,11 +9,19 @@ from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError
 from odoo.tools import date_utils, float_compare, float_round, float_is_zero
 
+class StockScrap(models.Model):
+	_inherit = 'stock.scrap'
+
+
+	production = fields.Char(string="Manufacturing Order",related='production_id.name')
+	work_order = fields.Char(string="Work Order",related='workorder_id.name')
+
 
 class MrpProduction(models.Model):
 	_inherit="mrp.production"
 
 	release_date = fields.Date(string='Release Date')
+	priority = fields.Selection([('0', 'Low'), ('1', 'Medium'), ('2', 'High'), ('3', 'Very High')], 'Priority',readonly=False,states={'done': [('readonly', True)]},default='1')
 
 	def get_attachment(self):
 		import base64
@@ -88,6 +96,28 @@ class MrpRoutingWorkcenter(models.Model):
 	done_by = fields.Char(string= 'Done By')
 	cycle_time = fields.Float(string='Cycle Time Old')
 	operator = fields.Char(string='Operator')
+	setuptime_per_unit = fields.Float(string='Setuptime Per Unit(Mins)',compute='_compute_setuptime_per_unit')
+	runtime_per_unit = fields.Float(string='Runtime Per Unit(Mins)')
+	total_time = fields.Float(string='Total Time(Mins)',compute='_compute_total_time')
+
+	@api.depends('setup_time', 'batch_size')
+	def _compute_setuptime_per_unit(self):
+		for line in self:
+			if line.setup_time and line.batch_size:
+ 				line.setuptime_per_unit = (line.setup_time / line.batch_size)
+			else:
+ 				line.setuptime_per_unit = 0            
+
+	@api.depends('setup_time', 'batch_size', 'runtime_per_unit')
+	def _compute_total_time(self):
+		setuptime_per_unit = 0 
+		runtime_per_unit = 0
+		for line in self:
+			if line.setup_time and line.batch_size:
+ 				setuptime_per_unit = (line.setup_time / line.batch_size)
+			if line.runtime_per_unit:
+ 				runtime_per_unit = line.runtime_per_unit
+			line.total_time = setuptime_per_unit + runtime_per_unit
 
 
 class ProductTemplate(models.Model):
@@ -172,3 +202,9 @@ class MrpBom(models.Model):
 # 				'total': self.env.company.currency_id.round(total),
 # 			})
 # 		return operations
+
+
+class MrpWorkorder(models.Model):
+	_inherit = 'mrp.workorder'
+
+	hcp_priority = fields.Selection('Production Priority', readonly=True,related='production_id.priority',help='Technical: used in views only.')

@@ -1,7 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-
 <odoo>
+
+     <record id="mrp_workorder_inherited3" model="ir.ui.view">
+            <field name="name">mrp.workorder.form.inherited3</field>
+            <field name="model">mrp.workorder</field>
+            <field name="inherit_id" ref="mrp.mrp_production_workorder_form_view_inherit"/>
+            <field name="arch" type="xml">
+            <xpath expr="//field[@name='finished_lot_id']" position="after">
+                    <field name="hcp_priority"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_mrp_production_workorder_form_view_filter_inherited2" model="ir.ui.view">
+        <field name="name">mrp.production.work.order.select.inherited2</field>
+        <field name="model">mrp.workorder</field>
+        <field name="inherit_id" ref="mrp.view_mrp_production_workorder_form_view_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='available']" position="after">
+                <separator/>
+                <filter string="Low Priority" name="hcp_priority" domain="[('hcp_priority', '=', '0')]"/>
+                <filter string="Medium Priority" name="hcp_priority" domain="[('hcp_priority', '=', '1')]"/>
+                <filter string="High Priority" name="hcp_priority" domain="[('hcp_priority', '=', '2')]"/>
+                <filter string="Very High Priority" name="hcp_priority" domain="[('hcp_priority', '=', '3')]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_scrap_view_form2_mrp_inherit_mrp_id" model="ir.ui.view">
+        <field name="name">stock.scrap.view.form2.inherit.mrp</field>
+        <field name="model">stock.scrap</field>
+        <field name="inherit_id" ref="mrp.stock_scrap_view_form2_mrp_inherit_mrp"/>
+        <field name="arch" type="xml">
+            <field name="owner_id" position="after">
+                <field name="workorder_id" invisible="1" />
+                <field name="production_id" invisible="1" />
+                <field name="production" />
+                <field name="work_order" string="Operation"/>
+            </field>
+        </field>
+    </record>
+
+
 
         <record id="mrp_workcenter_inherited_form2" model="ir.ui.view">
             <field name="name">mrp.workcenter.form.inherited2</field>
@@ -29,9 +69,13 @@
                 <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
                 <field name="arch" type="xml">
 
+                 <xpath expr="//button[@name='post_inventory']"  position='replace'>
+                        <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}"/>
+                </xpath>
 
                 <xpath expr="//field[@name='date_deadline']" position="before">
                     <field name="release_date"/>
+                    <field name="priority"/>
                 </xpath>
 
                 <xpath expr="//form/header" position='inside'>
@@ -64,15 +108,28 @@
             <field name="inherit_id" ref="mrp.mrp_routing_workcenter_form_view"/>
             <field name="arch" type="xml">
         
-            <xpath expr="//field[@name='sequence']" position="after">
-                <field name="setup_time" widget="float_time" string="Setup Time(minutes)" />
-                <field name="cycle_time" invisible="1" widget="float_time" string="Cycle Time(minutes)" />
+            <xpath expr="//field[@name='sequence']" position="before">
+                <field name="setup_time" widget="float_time" string="Batch Setup Time(Mins)" />
+                <field name="batch_size"/>
+                <field name="setuptime_per_unit"  widget="float_time"/>
+                <field name="runtime_per_unit" widget="float_time"/>
+                <field name="total_time"  widget="float_time"/>               
+            </xpath>
+            
+            <xpath expr="//field[@name='sequence']" position="replace">
+            </xpath>
+            
+            <xpath expr="//field[@name='time_mode']" position="before">
+                <field name="sequence" groups="base.group_no_one"/>           
+            </xpath>
+            
+            <xpath expr="//field[@name='time_mode']" position="before">
                 <field name="done_by" string="Done By" label="Done By"/>
                 <field name="operator" string="Operator" label="Operator" />
-                <field name="batch_size"/>
             </xpath>
+            
             <label for="time_cycle_manual" position="replace">
-                 <label for="time_cycle_manual" attrs="{'invisible': [('time_mode', '=', 'auto'), ('workorder_count', '!=' , 0)]}" string="Cycle Time"/>
+                 <label for="time_cycle_manual" attrs="{'invisible': [('time_mode', '=', 'auto'), ('workorder_count', '!=' , 0)]}" string="Total Time"/>
             </label>
 
             <!-- <xpath expr="//field[@name='time_cycle_manual']" position="after">
@@ -81,12 +138,7 @@
 
 </field>
 </record>
-
-
-
-
-
-             <record id="view_product_supplier_inherit2" model="ir.ui.view">
+            <record id="view_product_supplier_inherit2" model="ir.ui.view">
             <field name="name">product.template.supplier.form.inherit3</field>
             <field name="model">product.template</field>
             <field name="inherit_id" ref="purchase.view_product_supplier_inherit"/>
@@ -159,5 +211,15 @@
             </field>
         </record>
 
+        <record id="mrp_production_tree_vie_inherit3" model="ir.ui.view">
+            <field name="name">mrp.production.tree.inherit3</field>
+            <field name="model">mrp.production</field>
+            <field name="inherit_id" ref="mrp.mrp_production_tree_view"/>
+            <field name="arch" type="xml">
+                 <xpath expr="//field[@name='product_id']" position="after">
+                    <field name="priority"/>
+                </xpath>
+            </field>
+        </record>
   
 </odoo>
