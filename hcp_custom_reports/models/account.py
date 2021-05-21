@@ -94,8 +94,21 @@ class AccountMoveLine(models.Model):
 	price_tax = fields.Float(string="Total Tax")
 	invoice_ship_method = fields.Boolean(string='Invoice ship',default=False,compute='ship_line_method')
 	inv_line_amount = fields.Float(string="Line Amount",compute='_compute_invoice_line_level_amount',store=True)
+	country_origin = fields.Many2one('res.country','Origin')
 
-
+	def _get_computed_origin(self):
+		self.ensure_one()
+		if self.product_id:
+			return self.product_id.cust_fld3.id
+		return False
+    
+	@api.onchange('product_id')
+	def _onchange_product_id(self):
+		res = super(AccountMoveLine, self)._onchange_product_id()
+		for line in self:
+			line.country_origin = line._get_computed_origin()
+		return res
+            
 	@api.depends('quantity','price_unit')
 	def _compute_invoice_line_level_amount(self):
 		for line in self:
@@ -112,5 +125,23 @@ class AccountMoveLine(models.Model):
 				line.invoice_ship_method = False
 
 
-
-
+	#HEM NEW
+	def _get_computed_name(self):
+		self.ensure_one()
+		if not self.product_id:
+			return ''
+		if self.partner_id.lang:
+			product = self.product_id.with_context(lang=self.partner_id.lang)
+		else:
+			product = self.product_id
+		values = []
+		if product.name:
+			values.append(product.name)
+		if self.journal_id.type == 'sale':
+			if product.description_sale:
+				values.append(product.description_sale)
+		elif self.journal_id.type == 'purchase':
+			if product.description_purchase:
+				values.append(product.description_purchase)
+		#print(product.name,'AAAAAAAAAAAAAAAAAAAAAAAAAAA')
+		return '\n'.join(values)

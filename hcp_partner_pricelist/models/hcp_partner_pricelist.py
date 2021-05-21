@@ -341,6 +341,12 @@ class SaleOrder(models.Model):
     po_number = fields.Char(string='PO Number')
     priority = fields.Selection([('0','Low'),('1','Medium'),('2','High'),('3','Very High')],string='Priority', index=True,)
     lead_confirmation_date = fields.Date('Lead Confirmation Date')
+    pricelist_id = fields.Many2one(
+        'product.pricelist', string='Pricelist', check_company=True,  # Unrequired company
+        required=True, readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]",
+        help="If you change the pricelist, only newly added lines will be affected.",track_visibility='always')
+    shipment_pay_policy = fields.Selection([('post_pay','Postpay'),('pre_pay','Prepay')],'Shipment Pay Policy',default='post_pay')
     
     def action_quotation_send(self):
         ''' Opens a wizard to compose an email, with relevant mail template loaded by default '''
@@ -463,7 +469,9 @@ class SaleOrderLine(models.Model):
             uom=self.product_uom.id
         )
 
-        vals.update(name=self.get_sale_order_line_multiline_description_sale(product))
+        #vals.update(name=self.get_sale_order_line_multiline_description_sale(product))
+        #HEM NEW
+        vals.update(name=self.product_id.name)
         #self.tax_id = self.order_id.partner_id.taxes_id # Added to get tax from Customer 
         self._compute_tax_id() # commented to not to derive tax from product
 

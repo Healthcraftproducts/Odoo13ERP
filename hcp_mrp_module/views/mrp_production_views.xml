@@ -8,6 +8,7 @@
             <field name="arch" type="xml">
             <xpath expr="//field[@name='finished_lot_id']" position="after">
                     <field name="hcp_priority"/>
+                    <field name="workcenter_department"/>
             </xpath>
         </field>
     </record>
@@ -50,9 +51,13 @@
             <field name="arch" type="xml">
             <xpath expr="//group[@name='capacity']" position="after">
                 <group>
-                     <label for="shiftid"/>
+                     <label for="shiftid" invisible="1"/>
                     <div>
-                        <field name="shiftid" class="oe_inline"/>
+                        <field name="shiftid" class="oe_inline" invisible="1"/>
+                    </div>
+                     <label for="department" />
+                    <div>
+                        <field name="department" class="oe_inline"/>
                     </div>
                      <label for="cycle_time" invisible="1"/>
                     <div invisible="1">
@@ -110,10 +115,12 @@
         
             <xpath expr="//field[@name='sequence']" position="before">
                 <field name="setup_time" widget="float_time" string="Batch Setup Time(Mins)" />
-                <field name="batch_size"/>
+                <field name="custom_batch_size"/>
+		<field name="batch_size"/>
                 <field name="setuptime_per_unit"  widget="float_time"/>
                 <field name="runtime_per_unit" widget="float_time"/>
-                <field name="total_time"  widget="float_time"/>               
+                <field name="total_time"  widget="float_time"/>   
+                <field name="cycle_time"  widget="float_time"/>   
             </xpath>
             
             <xpath expr="//field[@name='sequence']" position="replace">
@@ -138,6 +145,43 @@
 
 </field>
 </record>
+<!-- MRP ROUTING WORKCENTER -->
+
+      <record id="search_mrp_routing_workcenter_operations" model="ir.ui.view">
+        <field name="name">Routing Operation Search</field>
+        <field name="model">mrp.routing.workcenter</field>
+        <field name="priority" eval="15"/>
+        <field name="arch" type="xml">
+            <search string="Routing Operation Search">
+                <field name="routing_id" string="Routing"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="Routing" name="group_routing_id" domain="[]" context="{'group_by':'routing_id'}"/>
+                </group>
+                </search>
+            </field>
+        </record>
+        
+        <record id="action_mrp_routing_workcenter_operations" model="ir.actions.act_window">
+            <field name="name">Routing Operations</field>
+            <field name="res_model">mrp.routing.workcenter</field>
+            <field name="search_view_id" ref="search_mrp_routing_workcenter_operations"/>
+            <field name="context">{'search_default_group_routing_id': 1 }</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+              <p class="">
+                Add a Routing Operations
+              </p>
+            </field>
+        </record>
+        
+        <menuitem
+            id="menu_mrp_routing_workcenter_operations"
+            action="action_mrp_routing_workcenter_operations"
+            parent="mrp.menu_mrp_configuration"
+            sequence="6"/>
+ <!-- MRP ROUTING WORKCENTER -->
+        
             <record id="view_product_supplier_inherit2" model="ir.ui.view">
             <field name="name">product.template.supplier.form.inherit3</field>
             <field name="model">product.template</field>

@@ -65,6 +65,7 @@ class MrpWorkcenter(models.Model):
 	cycle_time = fields.Float(string='Cycle Time Old')
 	shiftid = fields.Selection([('production','Production'),('outside_pro','Outside Pro'),('inventory','Inventory')],string='ShiftId')
 	time_stop = fields.Float('Cycle Time', help="Time in minutes for the cleaning.")
+	department = fields.Selection([('assembly','Assembly'),('machining','Machining'),('welding','Welding'),('fabrication','Fabrication'),('paint','Paint')],string='Department')
 
 	def name_get(self):
 		res = []
@@ -92,7 +93,8 @@ class MrpRoutingWorkcenter(models.Model):
 	_inherit = 'mrp.routing.workcenter'
 
 	setup_time = fields.Float(string='Setup Time')
-	batch_size = fields.Integer(string="Batch Size")
+	custom_batch_size = fields.Integer(string="Batch Size")
+	batch_size = fields.Integer(string="Partial Batch Size")
 	done_by = fields.Char(string= 'Done By')
 	cycle_time = fields.Float(string='Cycle Time Old')
 	operator = fields.Char(string='Operator')
@@ -100,21 +102,21 @@ class MrpRoutingWorkcenter(models.Model):
 	runtime_per_unit = fields.Float(string='Runtime Per Unit(Mins)')
 	total_time = fields.Float(string='Total Time(Mins)',compute='_compute_total_time')
 
-	@api.depends('setup_time', 'batch_size')
+	@api.depends('setup_time', 'custom_batch_size')
 	def _compute_setuptime_per_unit(self):
 		for line in self:
-			if line.setup_time and line.batch_size:
- 				line.setuptime_per_unit = (line.setup_time / line.batch_size)
+			if line.setup_time and line.custom_batch_size:
+ 				line.setuptime_per_unit = (line.setup_time / line.custom_batch_size)
 			else:
  				line.setuptime_per_unit = 0            
 
-	@api.depends('setup_time', 'batch_size', 'runtime_per_unit')
+	@api.depends('setup_time', 'custom_batch_size', 'runtime_per_unit')
 	def _compute_total_time(self):
 		setuptime_per_unit = 0 
 		runtime_per_unit = 0
 		for line in self:
-			if line.setup_time and line.batch_size:
- 				setuptime_per_unit = (line.setup_time / line.batch_size)
+			if line.setup_time and line.custom_batch_size:
+ 				setuptime_per_unit = (line.setup_time / line.custom_batch_size)
 			if line.runtime_per_unit:
  				runtime_per_unit = line.runtime_per_unit
 			line.total_time = setuptime_per_unit + runtime_per_unit
@@ -208,3 +210,7 @@ class MrpWorkorder(models.Model):
 	_inherit = 'mrp.workorder'
 
 	hcp_priority = fields.Selection('Production Priority', readonly=True,related='production_id.priority',help='Technical: used in views only.')
+	workcenter_department = fields.Selection('Department', readonly=True,related='workcenter_id.department')
+	
+	def name_get(self):
+		return [(wo.id, "%s - %s - %s" % (wo.production_id.name, wo.product_id.display_name, wo.name)) for wo in self]
