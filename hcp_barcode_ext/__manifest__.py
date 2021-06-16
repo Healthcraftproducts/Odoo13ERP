@@ -11,12 +11,13 @@
     'category': 'Uncategorized',
     'version': '0.1',
 
-    # any module necessary for this one to work correctly
     'depends': ['base','web','stock_barcode'],
 
-    # always loaded
     'data': [
         'views/asset.xml',
+    ],
+    'qweb': [
+        "static/src/xml/qweb_templates.xml",
     ],
 
 }
